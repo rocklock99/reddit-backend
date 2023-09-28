@@ -1,0 +1,63 @@
+// Prisma schema file for Reddit Clone Application
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "cockroachdb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String      @id @default(uuid())
+  username   String      @unique
+  password   String
+  subreddits Subreddit[]
+  posts      Post[]
+  downvotes  Downvote[]
+  upvotes    Upvote[]
+}
+
+model Post {
+  id          String     @id @default(uuid())
+  text        String
+  title       String?
+  userId      String
+  subredditId String
+  parentId    String?
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subreddit   Subreddit  @relation(fields: [subredditId], references: [id], onDelete: Cascade)
+  upvotes     Upvote[]
+  downvotes   Downvote[]
+  children    Post[]     @relation("ChildToParent")
+  parent      Post?      @relation("ChildToParent", fields: [parentId], references: [id], onDelete: Cascade)
+}
+
+model Subreddit {
+  id     String @id @default(uuid())
+  name   String @unique
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  posts  Post[]
+}
+
+model Upvote {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+}
+
+model Downvote {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+}
